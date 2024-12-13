@@ -4,10 +4,6 @@ scikit-learn
 seaborn
 python-dotenv
 streamlit
-google-generativeai
-langchain_community 
-tiktoken 
-langchain-openai 
-langchainhub 
-chromadb 
 langchain
+langchain-google-genai
+langchain-community

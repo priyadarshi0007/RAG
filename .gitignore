@@ -16,3 +16,6 @@ ragllm/
 
 # Environment files
 .env
+
+#chromadb
+chromadb

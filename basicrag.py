@@ -1,7 +1,6 @@
 import os
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_chroma import Chroma
-# from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
@@ -11,6 +10,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+if not GOOGLE_API_KEY:
+    raise ValueError("Google API key not found. Ensure it is set in the environment variables.")
 
 # Example documents
 documents = [
@@ -20,7 +21,7 @@ documents = [
 ]
 
 # Function to split text into manageable chunks
-def split_text_into_chunks(documents, chunk_size=10000, chunk_overlap=1000):
+def split_text_into_chunks(documents, chunk_size=1000, chunk_overlap=200):
     """Split documents into smaller chunks using a text splitter."""
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     text_chunks = []
@@ -35,7 +36,7 @@ def create_and_save_vector_store(text_chunks, persist_directory="./chromadb"):
     vector_store = Chroma.from_texts(text_chunks, embedding=embeddings, persist_directory=persist_directory)
     # vector_store.persist()
 
-# Function to load the conversational chain
+# Function to load the conversational chain with a static prompt.
 def get_conversational_chain():
     """Initialize a conversational chain with a custom prompt and Gemini model."""
     prompt_template = """
@@ -50,44 +51,9 @@ def get_conversational_chain():
 
     Answer:
     """
-    model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3)
+    model = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=GOOGLE_API_KEY, temperature=0.3)
     prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
     return load_qa_chain(model, chain_type="stuff", prompt=prompt)
-# Function to create the RAG Chain
-
-
-def get_rag_chain(vector_store):
-    """Create a RAG chain using a retriever and a Gemini LLM."""
-    retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
-
-    # Define prompt
-    prompt_template = """
-    Answer the question as detailed as possible from the provided context. If the answer is not in
-    the context, respond with "answer is not available in the context". Do not provide incorrect answers.
-
-    Context:
-    {context}
-
-    Question:
-    {question}
-
-    Answer:
-    """
-    prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
-
-    # Initialize the LLM
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=GOOGLE_API_KEY)
-
-    # Create the RAG chain
-    rag_chain = (
-        {"context": retriever | format_docs, "question": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
-
-    return rag_chain
-
 
 # Function to handle user input and generate a response
 def handle_user_question(user_question, persist_directory="./chromadb"):
@@ -108,14 +74,21 @@ def setup_documents(documents, persist_directory="./chromadb"):
 # Main Script
 if __name__ == "__main__":
     # Set up the documents and vector store
+    print("Setting up documents and vector store...")
     setup_documents(documents)
 
-    # Ask questions in a loop
+    # Interactive Question-Answer Loop
     print("Chat with your documents. Type 'exit' to quit.")
     while True:
-        user_question = input("\nAsk a question: ")
+        user_question = input("\nAsk a question: ").strip()
         if user_question.lower() == "exit":
             print("Goodbye!")
             break
-        response = handle_user_question(user_question)
-        print(f"Answer: {response}")
+        if not user_question:
+            print("Please ask a valid question.")
+            continue
+        try:
+            response = handle_user_question(user_question)
+            print(f"Answer: {response}")
+        except Exception as e:
+            print(f"An error occurred: {e}")

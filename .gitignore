@@ -20,4 +20,4 @@ ragllm/
 #chromadb
 chromadb
 
-basicrag_test.py
+embeddings_cache.pkl

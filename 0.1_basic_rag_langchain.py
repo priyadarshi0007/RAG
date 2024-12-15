@@ -1,13 +1,9 @@
 import bs4
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.schema import Document
 from dotenv import load_dotenv
 import os
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
-from langchain import hub
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
 from langchain.document_loaders import TextLoader
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate

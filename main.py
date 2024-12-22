@@ -31,10 +31,16 @@ def main():
     # Step 5: Initialize the retrieval-based QA system
     chain = initialize_retrieval_system(vectorstore, openai_api_key)
 
-    # Example query
-    query = "What is the main topic of the video?"
-    response = chain.invoke({"query": query})
-    print("Response:", response)
+# Interactive query loop
+    print("\nReady to answer your questions!")
+    print("Type 'exit' to quit.")
+    while True:
+        query = input("\nEnter your question: ")
+        if query.lower() == "exit":
+            print("Goodbye!")
+            break
+        response = chain.invoke({"query": query})
+        print("\nResponse:", response)
 
 if __name__ == "__main__":
     main()

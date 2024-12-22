@@ -4,7 +4,18 @@ def parse_vtt(file_path):
     """
     Parse a .vtt file and extract text content.
     """
-    captions = []  # List to store the text from each caption
-    for caption in webvtt.read(file_path):  # Iterates over each caption in the file
-        captions.append(caption.text.strip())  # Add cleaned text from each caption to the list
-    return " ".join(captions)  # Combine all captions into a single string
+    captions = []
+    for caption in webvtt.read(file_path):
+        captions.append(caption.text.strip())
+    return " ".join(captions)
+
+def chunk_text(text, chunk_size=500, overlap=100):
+    """
+    Split text into overlapping chunks for vectorization.
+    """
+    tokens = text.split()
+    chunks = []
+    for i in range(0, len(tokens), chunk_size - overlap):
+        chunk = " ".join(tokens[i:i + chunk_size])
+        chunks.append(chunk)
+    return chunks

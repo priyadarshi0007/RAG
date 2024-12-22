@@ -21,3 +21,9 @@ ragllm/
 chromadb
 
 embeddings_cache.pkl
+
+# Ignore ChromaDB data
+chromadb_data/
+
+# Ignore .vtt files
+*.vtt

@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
 import os
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_chroma import Chroma
-from langchain.chains import RetrievalQA
+from preprocess_vtt import parse_vtt, chunk_text
+from vectorstore import create_vectorstore, add_chunks_to_vectorstore
+from retrieval_system import initialize_retrieval_system
 
 # Load environment variables
 load_dotenv()
@@ -12,38 +12,29 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("API key not found. Add OPENAI_API_KEY to your .env file.")
 
-# Initialize components
-def initialize_openai_system():
-    # Initialize OpenAI embeddings
-    embeddings = OpenAIEmbeddings()
+def main():
+    # Path to your .vtt file
+    vtt_file_path = "finetune.vtt"
 
-    # Connect to ChromaDB
-    vectorstore = Chroma(
-        persist_directory="./chromadb_data",  # Persistent vector store directory
-        embedding_function=embeddings
-    )
+    # Step 1: Parse the .vtt file
+    text = parse_vtt(vtt_file_path)
 
-    # Initialize OpenAI chat model
-    llm = ChatOpenAI(
-        openai_api_key=openai_api_key,
-        temperature=0  # For deterministic responses
-    )
+    # Step 2: Chunk the text
+    chunks = chunk_text(text, chunk_size=500, overlap=100)
 
-    # Set up the retrieval-based QA system
-    retriever = vectorstore.as_retriever()
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        retriever=retriever,
-        chain_type="stuff"
-    )
-    return qa_chain
+    # Step 3: Create or connect to the vector store
+    vectorstore = create_vectorstore()
 
-# Main execution
-if __name__ == "__main__":
-    # Initialize the OpenAI-based system
-    chain = initialize_openai_system()
+    # Step 4: Add chunks to the vector store
+    add_chunks_to_vectorstore(vectorstore, chunks)
+
+    # Step 5: Initialize the retrieval-based QA system
+    chain = initialize_retrieval_system(vectorstore, openai_api_key)
 
     # Example query
-    query = "What is the main topic of the document?"
+    query = "What is the main topic of the video?"
     response = chain.invoke({"query": query})
     print("Response:", response)
+
+if __name__ == "__main__":
+    main()
